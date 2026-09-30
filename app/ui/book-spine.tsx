@@ -15,7 +15,8 @@ const COLORS = [
 ];
 const WIDTHS = ["w-[92%]", "w-[84%]", "w-[96%]", "w-[78%]", "w-[88%]"];
 const TILTS = ["-rotate-1", "rotate-0", "rotate-1", "rotate-[0.5deg]", "-rotate-[0.5deg]"];
-const HEIGHTS = ["h-14", "h-16", "h-12", "h-[60px]"];
+// 제목과 저자 두 줄이 들어가는 높이
+const HEIGHTS = ["h-14", "h-16", "h-[52px]", "h-[60px]"];
 
 /** 같은 책은 늘 같은 모양이 되도록 id로 고른다. */
 function pick<T>(items: T[], id: number, salt: number): T {
@@ -40,8 +41,10 @@ export function BookSpine({ book }: { book: StoredBook }) {
         {/* 책등 양 끝의 띠 */}
         <span className="absolute inset-y-0 left-3 w-1 rounded-full bg-white/60" aria-hidden />
         <span className="absolute inset-y-0 right-3 w-1 rounded-full bg-white/60" aria-hidden />
-        <span className="min-w-0 flex-1 truncate pl-2 font-cute text-lg">{book.title}</span>
-        {book.author && <span className="hidden max-w-[35%] truncate text-xs text-stone-600 sm:inline">{book.author}</span>}
+        <span className="flex min-w-0 flex-1 flex-col pl-2 leading-tight">
+          <span className="truncate font-cute text-lg">{book.title}</span>
+          {book.author && <span className="truncate text-xs text-stone-600">{book.author}</span>}
+        </span>
         {book.status === "finished" && book.rating !== null && (
           <span className="shrink-0 rounded-full bg-white/70 px-2 py-0.5 pr-2 text-xs">{formatRating(book.rating)}</span>
         )}
