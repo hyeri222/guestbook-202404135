@@ -1,10 +1,9 @@
 "use client";
 
 import { useRef } from "react";
-import { Usagi } from "./usagi";
 
 /**
- * 화면 아래 책상 위에 책을 쌓는다. 책이 위까지 차면 맨 위(가장 최근) 책이 보이는 데서 시작하고,
+ * 화면 아래 책상 위에 방명록 글을 책으로 쌓는다. 위까지 차면 맨 위(가장 최근) 글이 보이는 데서 시작하고,
  * 더미를 위아래로 끌어 아래쪽 책을 볼 수 있다. 터치는 기본 스크롤을 쓰고, 마우스는 끌기를 직접 처리한다.
  */
 export function BookPile({ children }: { children: React.ReactNode }) {
@@ -50,13 +49,12 @@ export function BookPile({ children }: { children: React.ReactNode }) {
         onDragStart={(event) => event.preventDefault()}
       >
         {/* 책이 적으면 아래로 붙어 책상 위에 놓인다. */}
-        {/* 좁은 화면에서는 책상 위 우사기 자리만큼 오른쪽을 비운다. */}
-        <div className="mt-auto flex flex-col items-center pr-14 pt-6 sm:pr-0">{children}</div>
+
+        <div className="mt-auto flex flex-col items-center pt-6">{children}</div>
       </div>
 
-      {/* 책상. 오른쪽 끝에 우사기가 걸터앉아 있다. */}
+      {/* 책상 */}
       <div aria-hidden className="relative mx-auto w-full max-w-lg">
-        <Usagi size={64} className="absolute -top-14 right-2 scale-x-[-1] rotate-[8deg]" />
         <div className="h-4 rounded-t-xl bg-desk shadow-[inset_0_-3px_0_var(--desk-edge)]" />
         <div className="mx-6 flex justify-between">
           <span className="h-6 w-3 rounded-b bg-desk-edge" />

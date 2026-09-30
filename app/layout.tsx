@@ -1,8 +1,7 @@
 import type { Metadata } from "next";
 import { Geist, Geist_Mono, Jua } from "next/font/google";
 import Link from "next/link";
-import { Usagi } from "@/app/ui/usagi";
-import { isOwner } from "@/lib/auth";
+import { DEVELOPER } from "@/lib/developer";
 import "./globals.css";
 
 const geistSans = Geist({
@@ -24,12 +23,11 @@ const jua = Jua({
 });
 
 export const metadata: Metadata = {
-  title: "독서 기록",
-  description: "읽고 싶은 책과 다 읽은 책의 평점, 감상평을 모아 두는 독서 기록장",
+  title: "책 더미 방명록",
+  description: "이름과 메시지를 책으로 쌓는 미니 방명록",
 };
 
-export default async function RootLayout({ children }: LayoutProps<"/">) {
-  const owner = await isOwner();
+export default function RootLayout({ children }: LayoutProps<"/">) {
 
   return (
     <html
@@ -40,17 +38,15 @@ export default async function RootLayout({ children }: LayoutProps<"/">) {
         <header>
           <div className="mx-auto flex max-w-2xl items-center justify-between px-4 py-4">
             <Link href="/" className="font-cute text-2xl">
-              📚 독서 기록
+              📚 책 더미 방명록
             </Link>
-            {owner && (
-              <Link
-                href="/me"
-                aria-label="마이페이지"
-                className="flex h-11 w-11 items-end justify-center overflow-hidden rounded-full bg-cream ring-2 ring-white shadow-sm transition hover:-translate-y-0.5"
-              >
-                <Usagi size={40} className="translate-y-1.5" />
-              </Link>
-            )}
+            <p className="text-right text-xs leading-tight text-foreground/60">
+              만든 사람
+              <br />
+              <span className="font-cute text-sm text-foreground">
+                {DEVELOPER.name} · {DEVELOPER.studentId}
+              </span>
+            </p>
           </div>
         </header>
         <main className="mx-auto w-full max-w-2xl flex-1 px-4 pb-6 pt-2">{children}</main>
