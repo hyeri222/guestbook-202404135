@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { Geist, Geist_Mono, Jua } from "next/font/google";
 import Link from "next/link";
+import { Usagi } from "@/app/ui/usagi";
 import { isOwner } from "@/lib/auth";
 import "./globals.css";
 
@@ -45,9 +46,9 @@ export default async function RootLayout({ children }: LayoutProps<"/">) {
               <Link
                 href="/me"
                 aria-label="마이페이지"
-                className="flex h-10 w-10 items-center justify-center rounded-full bg-accent-soft text-xl transition hover:scale-105"
+                className="flex h-11 w-11 items-end justify-center overflow-hidden rounded-full bg-cream ring-2 ring-white shadow-sm transition hover:-translate-y-0.5"
               >
-                🐻
+                <Usagi size={40} className="translate-y-1.5" />
               </Link>
             )}
           </div>

@@ -49,7 +49,7 @@ export default async function BookPage(props: PageProps<"/books/[id]">) {
         {finished && book.review && <p className="mt-4 whitespace-pre-wrap leading-7">{book.review}</p>}
       </section>
 
-      <section className="flex flex-col gap-4 rounded-3xl bg-card p-6 shadow-[0_4px_20px_rgba(74,59,52,0.06)]">
+      <section className="flex flex-col gap-4 rounded-3xl bg-card p-6 shadow-[0_4px_20px_rgba(63,53,48,0.06)]">
         <h2 className="font-cute text-xl">기록 고치기</h2>
         <BookForm action={saveBookAction.bind(null, id)} submitLabel="저장" today={today()} book={book} />
       </section>
