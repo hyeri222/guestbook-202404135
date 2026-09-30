@@ -170,7 +170,8 @@ export function changeStatus(book: Book, change: StatusChange, today: string): R
   const rating = parseRating(change.rating);
   if (rating === null) return reject("invalid_rating");
 
-  const review = blankToNull(change.review);
+  // 브라우저는 textarea 줄바꿈을 CRLF로 보낸다. 한 글자로 세고 저장한다.
+  const review = blankToNull(change.review?.replace(/\r\n/g, "\n"));
   if (review && [...review].length > REVIEW_MAX_LENGTH) return reject("review_too_long");
 
   const finishedOn = dateOrToday(change.finishedOn, today);

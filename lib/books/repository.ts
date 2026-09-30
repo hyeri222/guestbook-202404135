@@ -50,6 +50,25 @@ export async function listBooks(status: ReadingStatus): Promise<StoredBook[]> {
   return (rows as Row[]).map(toBook);
 }
 
+export type BookStats = { counts: Record<ReadingStatus, number>; averageRating: number | null };
+
+/** 마이페이지의 독서 현황: 독서 상태별 권수와 다 읽은 책의 평균 평점. */
+export async function bookStats(): Promise<BookStats> {
+  const sql = db();
+  const rows = await sql`
+    select status, count(*)::int as count, avg(rating)::float as average
+    from books
+    group by status
+  `;
+  const counts: Record<ReadingStatus, number> = { want_to_read: 0, reading: 0, finished: 0 };
+  let averageRating: number | null = null;
+  for (const row of rows) {
+    counts[row.status as ReadingStatus] = row.count;
+    if (row.status === "finished") averageRating = row.average;
+  }
+  return { counts, averageRating };
+}
+
 export async function findBook(id: number): Promise<StoredBook | null> {
   const sql = db();
   const rows = await sql`

@@ -407,3 +407,13 @@ describe("저장할 수 있는 독서 상태", () => {
     expect(nextStatuses(status)).toEqual(expected);
   });
 });
+
+describe("감상평 줄바꿈", () => {
+  it("브라우저가 보낸 CRLF 줄바꿈은 한 글자로 센다", () => {
+    const review = `${"가".repeat(999)}\r\n${"나".repeat(1000)}`;
+
+    const result = changeStatus(reading, { to: "finished", rating: "4", review }, TODAY);
+
+    expect(result).toMatchObject({ ok: true, book: { review: `${"가".repeat(999)}\n${"나".repeat(1000)}` } });
+  });
+});

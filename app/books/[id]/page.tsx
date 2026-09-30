@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { notFound } from "next/navigation";
 import { deleteBookAction, saveBookAction } from "@/app/actions";
 import { BookForm } from "@/app/ui/book-form";
@@ -21,9 +22,12 @@ export default async function BookPage(props: PageProps<"/books/[id]">) {
 
   return (
     <div className="flex flex-col gap-8">
+      <Link href={`/?tab=${book.status}`} className="text-sm text-foreground/60">
+        ← 책 더미로
+      </Link>
       <section className="flex flex-col gap-2">
         <p className="text-sm text-foreground/60">{STATUS_LABELS[book.status]}</p>
-        <h1 className="text-2xl font-semibold">{book.title}</h1>
+        <h1 className="font-cute text-3xl">{book.title}</h1>
         {book.author && <p className="text-foreground/80">{book.author}</p>}
         <dl className="mt-2 grid grid-cols-[auto_1fr] gap-x-4 gap-y-1 text-sm">
           {book.startedOn && (
@@ -45,8 +49,8 @@ export default async function BookPage(props: PageProps<"/books/[id]">) {
         {finished && book.review && <p className="mt-4 whitespace-pre-wrap leading-7">{book.review}</p>}
       </section>
 
-      <section className="flex flex-col gap-3 rounded border border-foreground/10 p-4">
-        <h2 className="font-semibold">기록 고치기</h2>
+      <section className="flex flex-col gap-4 rounded-3xl bg-card p-6 shadow-[0_4px_20px_rgba(74,59,52,0.06)]">
+        <h2 className="font-cute text-xl">기록 고치기</h2>
         <BookForm action={saveBookAction.bind(null, id)} submitLabel="저장" today={today()} book={book} />
       </section>
 

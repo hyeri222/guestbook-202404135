@@ -34,7 +34,7 @@ export function ActionForm({ action, submitLabel, children, className }: Props) 
       <button
         type="submit"
         disabled={pending}
-        className="self-start rounded bg-foreground px-4 py-2 text-sm text-background disabled:opacity-50"
+        className="self-start rounded-full bg-accent px-6 py-2.5 font-cute text-base text-white shadow-[0_3px_0_#e56f86] transition hover:-translate-y-0.5 active:translate-y-0.5 active:shadow-none disabled:opacity-50"
       >
         {pending ? "저장 중…" : submitLabel}
       </button>

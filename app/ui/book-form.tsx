@@ -31,10 +31,10 @@ export function BookForm({ action, submitLabel, today, book }: Props) {
           {nextStatuses(current).map((value) => (
             <label
               key={value}
-              className={`cursor-pointer rounded-full border px-4 py-1.5 ${
+              className={`cursor-pointer rounded-full border px-4 py-1.5 font-cute text-base transition ${
                 value === status
-                  ? "border-foreground bg-foreground text-background"
-                  : "border-foreground/20 text-foreground/70"
+                  ? "border-accent bg-accent text-white"
+                  : "border-foreground/10 bg-card text-foreground/70"
               }`}
             >
               <input
