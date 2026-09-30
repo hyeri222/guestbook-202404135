@@ -12,132 +12,95 @@ import {
   isDuplicateKeyError,
   updateBook,
 } from "@/lib/books/repository";
-import {
-  type ReadingStatus,
-  type RuleResult,
-  type StatusChange,
-  changeStatus,
-  editDetails,
-  registerBook,
-} from "@/lib/books/rules";
+import { type Book, type ReadingStatus, type RegisterInput, registerBook, reviseBook } from "@/lib/books/rules";
 import { today } from "@/lib/today";
 
 export type FormState = { message: string; duplicateOf?: number } | null;
 
-const NOT_OWNER: FormState = { message: "주인만 기록을 바꿀 수 있습니다. 먼저 로그인해 주세요." };
+const NOT_OWNER: FormState = { message: "로그인이 풀렸습니다. 다시 로그인해 주세요." };
 const NOT_FOUND: FormState = { message: "책을 찾을 수 없습니다. 이미 삭제되었을 수 있습니다." };
-const DUPLICATE = (id: number): FormState => ({ message: "이미 있는 책입니다.", duplicateOf: id });
 
 function field(formData: FormData, name: string): string {
   const value = formData.get(name);
   return typeof value === "string" ? value : "";
 }
 
-function statusField(formData: FormData): ReadingStatus {
-  const value = field(formData, "status");
-  return value === "reading" || value === "finished" ? value : "want_to_read";
+/** 책 폼의 값. 고른 독서 상태에 없는 칸은 폼에 없으므로 undefined로 둔다. */
+function bookInput(formData: FormData): RegisterInput {
+  const optional = (name: string) => (formData.has(name) ? field(formData, name) : undefined);
+  const status = field(formData, "status");
+
+  return {
+    title: field(formData, "title"),
+    author: field(formData, "author"),
+    status: (["want_to_read", "reading", "finished"] as const).find((s) => s === status),
+    startedOn: optional("startedOn"),
+    rating: optional("rating"),
+    review: optional("review"),
+    finishedOn: optional("finishedOn"),
+  };
 }
 
-function failure(result: Extract<RuleResult, { ok: false }>): FormState {
-  return { message: result.message };
-}
-
-function refresh(id?: number) {
+function revalidateBookPages(id?: number) {
   revalidatePath("/");
   if (id !== undefined) revalidatePath(`/books/${id}`);
+}
+
+/** 저장하고, 같은 책이 이미 있으면 그 책을 알려준다. 저장했으면 null. */
+async function saveUnlessDuplicate(book: Book, save: () => Promise<unknown>, selfId?: number): Promise<FormState> {
+  const duplicate = async (): Promise<FormState> => {
+    const id = await findDuplicateId(book);
+    if (id === null || id === selfId) return null;
+    return { message: "이미 있는 책입니다.", duplicateOf: id };
+  };
+
+  const found = await duplicate();
+  if (found) return found;
+
+  try {
+    await save();
+    return null;
+  } catch (error) {
+    // 동시에 같은 책을 저장하는 경합은 unique 제약이 막는다.
+    if (!isDuplicateKeyError(error)) throw error;
+    return (await duplicate()) ?? { message: "이미 있는 책입니다." };
+  }
 }
 
 export async function registerBookAction(_prev: FormState, formData: FormData): Promise<FormState> {
   if (!(await isOwner())) return NOT_OWNER;
 
-  const status = statusField(formData);
-  const result = registerBook(
-    {
-      title: field(formData, "title"),
-      author: field(formData, "author"),
-      status,
-      startedOn: field(formData, "startedOn"),
-      rating: field(formData, "rating"),
-      review: field(formData, "review"),
-      finishedOn: field(formData, "finishedOn"),
-    },
-    today(),
-  );
-  if (!result.ok) return failure(result);
+  const result = registerBook(bookInput(formData), today());
+  if (!result.ok) return { message: result.message };
 
-  const duplicateId = await findDuplicateId(result.book);
-  if (duplicateId !== null) return DUPLICATE(duplicateId);
+  const failed = await saveUnlessDuplicate(result.book, () => insertBook(result.book));
+  if (failed) return failed;
 
-  try {
-    await insertBook(result.book);
-  } catch (error) {
-    if (!isDuplicateKeyError(error)) throw error;
-    const id = await findDuplicateId(result.book);
-    return id === null ? { message: "이미 있는 책입니다." } : DUPLICATE(id);
-  }
-
-  refresh();
-  redirect(`/?tab=${status}`);
+  revalidateBookPages();
+  redirect(`/?tab=${result.book.status satisfies ReadingStatus}`);
 }
 
-export async function editBookAction(id: number, _prev: FormState, formData: FormData): Promise<FormState> {
+export async function saveBookAction(id: number, _prev: FormState, formData: FormData): Promise<FormState> {
   if (!(await isOwner())) return NOT_OWNER;
 
   const book = await findBook(id);
   if (!book) return NOT_FOUND;
 
-  const result = editDetails(book, { title: field(formData, "title"), author: field(formData, "author") });
-  if (!result.ok) return failure(result);
+  const result = reviseBook(book, bookInput(formData), today());
+  if (!result.ok) return { message: result.message };
 
-  const duplicateId = await findDuplicateId(result.book);
-  if (duplicateId !== null && duplicateId !== id) return DUPLICATE(duplicateId);
+  const failed = await saveUnlessDuplicate(result.book, () => updateBook(id, result.book), id);
+  if (failed) return failed;
 
-  try {
-    await updateBook(id, result.book);
-  } catch (error) {
-    if (!isDuplicateKeyError(error)) throw error;
-    const otherId = await findDuplicateId(result.book);
-    return otherId === null ? { message: "이미 있는 책입니다." } : DUPLICATE(otherId);
-  }
-
-  refresh(id);
-  redirect(`/books/${id}`);
-}
-
-export async function changeStatusAction(id: number, _prev: FormState, formData: FormData): Promise<FormState> {
-  if (!(await isOwner())) return NOT_OWNER;
-
-  const book = await findBook(id);
-  if (!book) return NOT_FOUND;
-
-  const to = field(formData, "to");
-  const change: StatusChange =
-    to === "reading"
-      ? { to, startedOn: field(formData, "startedOn") }
-      : to === "finished"
-        ? {
-            to,
-            rating: field(formData, "rating"),
-            review: field(formData, "review"),
-            finishedOn: field(formData, "finishedOn"),
-            // 평가 고치기 폼에만 시작한 날 칸이 있다. 칸이 없으면 그대로 둔다.
-            startedOn: formData.has("startedOn") ? field(formData, "startedOn") : undefined,
-          }
-        : { to: "want_to_read" };
-
-  const result = changeStatus(book, change, today());
-  if (!result.ok) return failure(result);
-
-  await updateBook(id, result.book);
-  refresh(id);
-  redirect(`/books/${id}`);
+  revalidateBookPages(id);
+  redirect(`/?tab=${result.book.status}`);
 }
 
 export async function deleteBookAction(id: number): Promise<void> {
-  if (!(await isOwner())) throw new Error("주인만 책을 삭제할 수 있습니다.");
+  if (!(await isOwner())) redirect("/login");
 
   await deleteBook(id);
-  refresh(id);
+  revalidateBookPages(id);
   redirect("/");
 }
 
@@ -151,5 +114,5 @@ export async function logInAction(_prev: FormState, formData: FormData): Promise
 export async function logOutAction(): Promise<void> {
   await logOut();
   revalidatePath("/", "layout");
-  redirect("/");
+  redirect("/login");
 }

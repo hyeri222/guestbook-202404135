@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { type Book, changeStatus, editDetails, normalizeKey, registerBook } from "./rules";
+import { type Book, changeStatus, editDetails, nextStatuses, normalizeKey, registerBook, reviseBook } from "./rules";
 
 const TODAY = "2026-09-30";
 
@@ -339,5 +339,71 @@ describe("시작한 날 고치기", () => {
     );
 
     expect(result).toMatchObject({ ok: false, error: "finished_before_started" });
+  });
+});
+
+describe("상세 페이지에서 한 번에 저장", () => {
+  it("읽고 싶음인 책에 평점을 넣고 다 읽음으로 저장하면 다 읽음이 된다", () => {
+    const result = reviseBook(
+      wantToRead,
+      { title: "데미안", author: "헤르만 헤세", status: "finished", startedOn: "", rating: "4.5", review: "좋다" },
+      TODAY,
+    );
+
+    expect(result).toMatchObject({
+      ok: true,
+      book: { status: "finished", rating: 4.5, review: "좋다", startedOn: null, finishedOn: TODAY },
+    });
+  });
+
+  it("상태를 그대로 두고 제목만 고칠 수 있다", () => {
+    const result = reviseBook(wantToRead, { title: "데미안 (개정판)", author: "헤르만 헤세", status: "want_to_read" }, TODAY);
+
+    expect(result).toEqual({ ok: true, book: { ...wantToRead, title: "데미안 (개정판)" } });
+  });
+
+  it("제목과 평점을 함께 고칠 수 있다", () => {
+    const result = reviseBook(
+      finished,
+      {
+        title: "데미안!",
+        author: "헤르만 헤세",
+        status: "finished",
+        startedOn: finished.startedOn,
+        rating: "5",
+        finishedOn: finished.finishedOn,
+      },
+      TODAY,
+    );
+
+    expect(result).toMatchObject({ ok: true, book: { title: "데미안!", rating: 5, finishedOn: finished.finishedOn } });
+  });
+
+  it("읽는 중인 책을 읽고 싶음으로 저장하면 거절한다", () => {
+    const result = reviseBook(reading, { title: "데미안", status: "want_to_read" }, TODAY);
+
+    expect(result).toMatchObject({ ok: false, error: "transition_not_allowed" });
+  });
+
+  it("다 읽음으로 저장하는데 평점이 없으면 거절한다", () => {
+    const result = reviseBook(reading, { title: "데미안", status: "finished", rating: "" }, TODAY);
+
+    expect(result).toMatchObject({ ok: false, error: "rating_required" });
+  });
+
+  it("제목을 지우면 상태 변경도 하지 않고 거절한다", () => {
+    const result = reviseBook(reading, { title: "", status: "finished", rating: "4" }, TODAY);
+
+    expect(result).toMatchObject({ ok: false, error: "title_required" });
+  });
+});
+
+describe("저장할 수 있는 독서 상태", () => {
+  it.each([
+    ["want_to_read", ["want_to_read", "reading", "finished"]],
+    ["reading", ["reading", "finished"]],
+    ["finished", ["reading", "finished"]],
+  ] as const)("%s인 책은 %j로 저장할 수 있다", (status, expected) => {
+    expect(nextStatuses(status)).toEqual(expected);
   });
 });

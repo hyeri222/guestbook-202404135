@@ -1,14 +1,17 @@
 import Link from "next/link";
-import { isOwner } from "@/lib/auth";
+import { requireOwner } from "@/lib/auth";
 import { listBooks } from "@/lib/books/repository";
 import { today } from "@/lib/today";
+import { registerBookAction } from "./actions";
+import { BookForm } from "./ui/book-form";
 import { STATUSES, STATUS_LABELS, formatRating, isStatus } from "./ui/labels";
-import { RegisterForm } from "./ui/register-form";
 
 export default async function Home(props: PageProps<"/">) {
+  await requireOwner();
+
   const { tab } = await props.searchParams;
   const status = isStatus(tab) ? tab : "want_to_read";
-  const [books, owner] = await Promise.all([listBooks(status), isOwner()]);
+  const books = await listBooks(status);
 
   return (
     <div className="flex flex-col gap-6">
@@ -49,12 +52,10 @@ export default async function Home(props: PageProps<"/">) {
         </ul>
       )}
 
-      {owner && (
-        <section className="flex flex-col gap-3 rounded border border-foreground/10 p-4">
-          <h2 className="font-semibold">새 책 등록</h2>
-          <RegisterForm today={today()} />
-        </section>
-      )}
+      <section className="flex flex-col gap-3 rounded border border-foreground/10 p-4">
+        <h2 className="font-semibold">새 책 등록</h2>
+        <BookForm action={registerBookAction} submitLabel="책 등록" today={today()} />
+      </section>
     </div>
   );
 }

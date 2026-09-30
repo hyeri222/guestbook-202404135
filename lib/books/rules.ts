@@ -92,6 +92,37 @@ export function editDetails(book: Book, input: DetailsInput): RuleResult {
   return { ok: true, book: { ...book, ...details.book } };
 }
 
+/**
+ * 상세 페이지의 폼 하나로 제목, 저자, 독서 상태, 날짜, 평가를 한 번에 저장한다.
+ * 읽고 싶음인 책을 읽고 싶음으로 저장하는 것만 상태 변경 없이 받는다.
+ */
+export function reviseBook(book: Book, input: RegisterInput, today: string): RuleResult {
+  const details = editDetails(book, input);
+  if (!details.ok) return details;
+
+  const status = input.status ?? book.status;
+  if (status === "want_to_read" && book.status === "want_to_read") return details;
+
+  switch (status) {
+    case "want_to_read":
+      return changeStatus(details.book, { to: "want_to_read" }, today);
+    case "reading":
+      return changeStatus(details.book, { to: "reading", startedOn: input.startedOn }, today);
+    case "finished":
+      return changeStatus(
+        details.book,
+        {
+          to: "finished",
+          rating: input.rating ?? "",
+          review: input.review,
+          finishedOn: input.finishedOn,
+          startedOn: input.startedOn,
+        },
+        today,
+      );
+  }
+}
+
 function parseDetails(
   input: DetailsInput,
 ): { ok: true; book: Pick<Book, "title" | "author"> } | Extract<RuleResult, { ok: false }> {
@@ -113,6 +144,11 @@ export type StatusChange =
       /** 보내지 않으면 그대로 두고, 비우면 지운다. 다 읽은 책의 시작한 날을 고칠 때 쓴다. */
       startedOn?: string | null;
     };
+
+/** 이 독서 상태의 책을 저장할 수 있는 독서 상태. 지금 상태도 포함한다(수정). */
+export function nextStatuses(status: ReadingStatus): ReadingStatus[] {
+  return status === "want_to_read" ? ["want_to_read", "reading", "finished"] : ["reading", "finished"];
+}
 
 /**
  * 허용하는 전이는 읽고 싶음 → 읽는 중, 읽고 싶음 → 다 읽음, 읽는 중 → 다 읽음,

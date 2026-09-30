@@ -1,6 +1,7 @@
 // 주인 인증: 환경변수의 비밀번호 하나로 로그인하고, 서명한 쿠키로 30일 동안 기억한다.
 import { createHash, createHmac, timingSafeEqual } from "node:crypto";
 import { cookies } from "next/headers";
+import { redirect } from "next/navigation";
 
 const COOKIE_NAME = "owner_session";
 const SESSION_DAYS = 30;
@@ -28,6 +29,11 @@ export async function isOwner(): Promise<boolean> {
   const [expiresAt, signature] = value.split(".");
   if (!expiresAt || !signature || Number(expiresAt) < Date.now()) return false;
   return safeEqual(signature, sign(Number(expiresAt)));
+}
+
+/** 로그인하지 않았으면 로그인 페이지로 보낸다. 모든 페이지는 주인만 볼 수 있다. */
+export async function requireOwner(): Promise<void> {
+  if (!(await isOwner())) redirect("/login");
 }
 
 /** 비밀번호가 맞으면 쿠키를 발급하고 true. */

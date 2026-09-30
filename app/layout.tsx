@@ -37,21 +37,17 @@ export default async function RootLayout({ children }: LayoutProps<"/">) {
           </div>
         </header>
         <main className="mx-auto w-full max-w-2xl flex-1 px-4 py-6">{children}</main>
-        <footer className="border-t border-foreground/10">
-          <div className="mx-auto max-w-2xl px-4 py-4 text-xs text-foreground/60">
-            {owner ? (
+        {owner && (
+          <footer className="border-t border-foreground/10">
+            <div className="mx-auto max-w-2xl px-4 py-4 text-xs text-foreground/60">
               <form action={logOutAction}>
                 <button type="submit" className="underline">
                   로그아웃
                 </button>
               </form>
-            ) : (
-              <Link href="/login" className="underline">
-                주인 로그인
-              </Link>
-            )}
-          </div>
-        </footer>
+            </div>
+          </footer>
+        )}
       </body>
     </html>
   );

@@ -7,7 +7,7 @@ export default async function LoginPage() {
 
   return (
     <section className="mx-auto flex w-full max-w-sm flex-col gap-4">
-      <h1 className="text-xl font-semibold">주인 로그인</h1>
+      <h1 className="text-xl font-semibold">로그인</h1>
       <LoginForm />
     </section>
   );
