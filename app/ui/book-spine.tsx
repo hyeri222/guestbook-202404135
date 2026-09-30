@@ -2,7 +2,7 @@ import Link from "next/link";
 import type { StoredBook } from "@/lib/books/repository";
 import { formatRating } from "./labels";
 
-// 책등 색은 파스텔 몇 가지를 돌려 쓴다. 글자는 어두운 색이라 다크 모드에서도 읽힌다.
+// 책등 색은 파스텔 몇 가지를 돌려 쓴다.
 const COLORS = [
   "bg-rose-200",
   "bg-amber-200",
